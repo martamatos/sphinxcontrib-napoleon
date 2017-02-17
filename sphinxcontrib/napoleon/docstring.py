@@ -77,6 +77,7 @@ class GoogleDocstring(object):
     :rtype: str
 
     """
+
     def __init__(self, docstring, config=None, app=None, what='', name='',
                  obj=None, options=None):
         self._config = config
@@ -102,14 +103,23 @@ class GoogleDocstring(object):
                 'args': self._parse_parameters_section,
                 'arguments': self._parse_parameters_section,
                 'attributes': self._parse_attributes_section,
+                'author': self._parse_authors_section,
+                'authors': self._parse_authors_section,
                 'example': self._parse_examples_section,
                 'examples': self._parse_examples_section,
+                'input': self._parse_parameters_section,
+                'inputs': self._parse_parameters_section,
                 'keyword args': self._parse_keyword_arguments_section,
                 'keyword arguments': self._parse_keyword_arguments_section,
                 'methods': self._parse_methods_section,
                 'note': self._parse_note_section,
                 'notes': self._parse_notes_section,
-                'other parameters': self._parse_other_parameters_section,
+                'optional input': self._parse_optional_parameters_section,
+                'optional inputs': self._parse_optional_parameters_section,
+                'optional output': self._parse_optional_returns_section,
+                'optional outputs': self._parse_optional_returns_section,
+                'output': self._parse_returns_section,
+                'outputs': self._parse_returns_section,
                 'parameters': self._parse_parameters_section,
                 'return': self._parse_returns_section,
                 'returns': self._parse_returns_section,
@@ -400,6 +410,9 @@ class GoogleDocstring(object):
             lines.append('')
         return lines
 
+    def _parse_authors_section(self, section):
+        return []
+
     def _parse_examples_section(self, section):
         use_admonition = self._config.napoleon_use_admonition_for_examples
         return self._parse_generic_section(section, use_admonition)
@@ -437,8 +450,60 @@ class GoogleDocstring(object):
         use_admonition = self._config.napoleon_use_admonition_for_notes
         return self._parse_generic_section('Notes', use_admonition)
 
-    def _parse_other_parameters_section(self, section):
-        return self._format_fields('Other Parameters', self._consume_fields())
+    def _parse_optional_parameters_section(self, section):
+        fields = self._consume_fields()
+        multi = len(fields) > 1
+        if multi:
+            use_rtype = False
+        else:
+            use_rtype = self._config.napoleon_use_rtype
+
+        lines = []
+        for _name, _type, _desc in fields:
+            if use_rtype:
+                field = self._format_field(_name, '', _desc)
+            else:
+                field = self._format_field(_name, _type, _desc)
+            if multi:
+                if lines:
+                    lines.extend(self._format_block('          * ', field))
+                else:
+                    lines.extend([u':Optional inputs:'])
+                    lines.extend(self._format_block('          * ', field))
+            else:
+                lines.extend([u':Optional input:'])
+                lines.extend(self._format_block('          * ', field))
+                if _type and use_rtype:
+                    lines.append(':rtype: %s' % _type)
+        return lines
+
+    def _parse_optional_returns_section(self, section):
+        fields = self._consume_returns_section()
+        multi = len(fields) > 1
+        if multi:
+            use_rtype = False
+        else:
+            use_rtype = self._config.napoleon_use_rtype
+
+        lines = []
+        for _name, _type, _desc in fields:
+            if use_rtype:
+                field = self._format_field(_name, '', _desc)
+            else:
+                field = self._format_field(_name, _type, _desc)
+
+            if multi:
+                if lines:
+                    lines.extend(self._format_block('          * ', field))
+                else:
+                    lines.extend([u':Optional outputs:'])
+                    lines.extend(self._format_block('          * ', field))
+            else:
+                lines.extend([u':Optional output:'])
+                lines.extend(self._format_block('          * ', field))
+                if _type and use_rtype:
+                    lines.append(':rtype: %s' % _type)
+        return lines
 
     def _parse_parameters_section(self, section):
         fields = self._consume_fields()
@@ -451,7 +516,7 @@ class GoogleDocstring(object):
                     lines.append(':type %s: %s' % (_name, _type))
             return lines + ['']
         else:
-            return self._format_fields('Parameters', fields)
+            return self._format_fields('Inputs', fields)
 
     def _parse_raises_section(self, section):
         fields = self._consume_fields()
@@ -507,9 +572,11 @@ class GoogleDocstring(object):
                 if lines:
                     lines.extend(self._format_block('          * ', field))
                 else:
-                    lines.extend(self._format_block(':returns: * ', field))
+                    lines.extend([u':Outputs:', u''])
+                    lines.extend(self._format_block('  * ', field))
             else:
-                lines.extend(self._format_block(':returns: ', field))
+                lines.extend([u':Output:', u''])
+                lines.extend(self._format_block('  * ', field))
                 if _type and use_rtype:
                     lines.append(':rtype: %s' % _type)
         return lines
@@ -645,6 +712,7 @@ class NumpyDocstring(GoogleDocstring):
             The lines of the docstring in a list.
 
     """
+
     def __init__(self, docstring, config=None, app=None, what='', name='',
                  obj=None, options=None):
         self._directive_sections = ['.. index::']
