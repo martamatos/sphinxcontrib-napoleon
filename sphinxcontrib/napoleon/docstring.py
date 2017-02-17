@@ -390,6 +390,7 @@ class GoogleDocstring(object):
                 else:
                     lines = self._consume_to_next_section()
             self._parsed_lines.extend(lines)
+        print self._parsed_lines
 
     def _parse_attributes_section(self, section):
         lines = []
