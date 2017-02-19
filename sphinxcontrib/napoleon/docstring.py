@@ -103,8 +103,6 @@ class GoogleDocstring(object):
                 'args': self._parse_parameters_section,
                 'arguments': self._parse_parameters_section,
                 'attributes': self._parse_attributes_section,
-                'author': self._parse_authors_section,
-                'authors': self._parse_authors_section,
                 'example': self._parse_examples_section,
                 'examples': self._parse_examples_section,
                 'input': self._parse_parameters_section,
@@ -126,6 +124,7 @@ class GoogleDocstring(object):
                 'raises': self._parse_raises_section,
                 'references': self._parse_references_section,
                 'see also': self._parse_see_also_section,
+                'usage': self._parse_usage_section,
                 'warning': self._parse_warning_section,
                 'warnings': self._parse_warning_section,
                 'warns': self._parse_warns_section,
@@ -246,6 +245,7 @@ class GoogleDocstring(object):
         lines = []
         while not self._is_section_break():
             lines.append(next(self._line_iter))
+        print lines + self._consume_empty()
         return lines + self._consume_empty()
 
     def _dedent(self, lines, full=False):
@@ -257,6 +257,8 @@ class GoogleDocstring(object):
 
     def _format_admonition(self, admonition, lines):
         lines = self._strip_empty(lines)
+        print "admonition"
+        print lines
         if len(lines) == 1:
             return ['.. %s:: %s' % (admonition, lines[0].strip()), '']
         elif lines:
@@ -296,19 +298,23 @@ class GoogleDocstring(object):
         return field + _desc
 
     def _format_fields(self, field_type, fields):
-        field_type = ':%s:' % field_type.strip()
+        field_type = '**%s**' % field_type.strip()
         padding = ' ' * len(field_type)
         multi = len(fields) > 1
-        lines = []
+        lines = [field_type, '']
+        print "format_fields"
+        print field_type, fields
         for _name, _type, _desc in fields:
             field = self._format_field(_name, _type, _desc)
-            if multi:
-                if lines:
-                    lines.extend(self._format_block(padding + ' * ', field))
-                else:
-                    lines.extend(self._format_block(field_type + ' * ', field))
-            else:
-                lines.extend(self._format_block(field_type + ' ', field))
+            # if multi:
+                # if lines:
+                #     lines.extend(self._format_block(padding + ' * ', field))
+                # else:
+            lines.extend(self._format_block(padding + ' * ', field))
+            # else:
+            #     lines.extend(self._format_block(field_type + ' ', field))
+
+        print lines
         return lines
 
     def _get_current_indent(self, peek_ahead=0):
@@ -350,9 +356,12 @@ class GoogleDocstring(object):
 
     def _is_section_header(self):
         section = self._line_iter.peek().lower()
+        # print section
         if section.strip(':') in self._sections:
+            print "is section header: ", section
             header_indent = self._get_indent(section)
             section_indent = self._get_current_indent(peek_ahead=1)
+            print  section_indent > header_indent
             return section_indent > header_indent
         elif self._directive_sections:
             if _directive_regex.match(section):
@@ -375,19 +384,23 @@ class GoogleDocstring(object):
             if self._is_section_header():
                 try:
                     section = self._consume_section_header()
+                    print "section: ", section
                     self._is_in_section = True
                     self._section_indent = self._get_current_indent()
                     if _directive_regex.match(section):
                         lines = [section] + self._consume_to_next_section()
                     else:
+                        print "parse: ", section
                         lines = self._sections[section.lower()](section)
                 finally:
                     self._is_in_section = False
                     self._section_indent = 0
             else:
                 if not self._parsed_lines:
+                    print "parsed lines: false"
                     lines = self._consume_contiguous() + self._consume_empty()
                 else:
+                    print "parsed lines: true" 
                     lines = self._consume_to_next_section()
             self._parsed_lines.extend(lines)
         print self._parsed_lines
@@ -415,8 +428,17 @@ class GoogleDocstring(object):
         return []
 
     def _parse_examples_section(self, section):
-        use_admonition = self._config.napoleon_use_admonition_for_examples
-        return self._parse_generic_section(section, use_admonition)
+        print "example: ", section
+        fields = self._consume_fields()
+        print fields
+        field_type = '**Example**'
+        padding = ' ' * len(field_type)
+        lines = [field_type, '::']
+        print field_type, fields
+        for _name, _type, _desc in fields:
+            lines.append('  ' + _name)
+        print lines
+        return lines
 
     def _parse_generic_section(self, section, use_admonition):
         lines = self._strip_empty(self._consume_to_next_section())
@@ -455,69 +477,25 @@ class GoogleDocstring(object):
         fields = self._consume_fields()
         multi = len(fields) > 1
         if multi:
-            use_rtype = False
+            return self._format_fields('Optional outputs', fields)
         else:
-            use_rtype = self._config.napoleon_use_rtype
-
-        lines = []
-        for _name, _type, _desc in fields:
-            if use_rtype:
-                field = self._format_field(_name, '', _desc)
-            else:
-                field = self._format_field(_name, _type, _desc)
-            if multi:
-                if lines:
-                    lines.extend(self._format_block('          * ', field))
-                else:
-                    lines.extend([u':Optional inputs:'])
-                    lines.extend(self._format_block('          * ', field))
-            else:
-                lines.extend([u':Optional input:'])
-                lines.extend(self._format_block('          * ', field))
-                if _type and use_rtype:
-                    lines.append(':rtype: %s' % _type)
-        return lines
+            return self._format_fields('Optional output', fields)
 
     def _parse_optional_returns_section(self, section):
         fields = self._consume_returns_section()
         multi = len(fields) > 1
         if multi:
-            use_rtype = False
+            return self._format_fields('Optional outputs', fields)
         else:
-            use_rtype = self._config.napoleon_use_rtype
-
-        lines = []
-        for _name, _type, _desc in fields:
-            if use_rtype:
-                field = self._format_field(_name, '', _desc)
-            else:
-                field = self._format_field(_name, _type, _desc)
-
-            if multi:
-                if lines:
-                    lines.extend(self._format_block('          * ', field))
-                else:
-                    lines.extend([u':Optional outputs:'])
-                    lines.extend(self._format_block('          * ', field))
-            else:
-                lines.extend([u':Optional output:'])
-                lines.extend(self._format_block('          * ', field))
-                if _type and use_rtype:
-                    lines.append(':rtype: %s' % _type)
-        return lines
+            return self._format_fields('Optional output', fields)
 
     def _parse_parameters_section(self, section):
         fields = self._consume_fields()
-        if self._config.napoleon_use_param:
-            lines = []
-            for _name, _type, _desc in fields:
-                field = ':param %s: ' % _name
-                lines.extend(self._format_block(field, _desc))
-                if _type:
-                    lines.append(':type %s: %s' % (_name, _type))
-            return lines + ['']
-        else:
+        multi = len(fields) > 1
+        if multi:
             return self._format_fields('Inputs', fields)
+        else:
+            return self._format_fields('Input', fields)
 
     def _parse_raises_section(self, section):
         fields = self._consume_fields()
@@ -558,34 +536,22 @@ class GoogleDocstring(object):
         fields = self._consume_returns_section()
         multi = len(fields) > 1
         if multi:
-            use_rtype = False
+            return self._format_fields('Outputs', fields)
         else:
-            use_rtype = self._config.napoleon_use_rtype
-
-        lines = []
-        for _name, _type, _desc in fields:
-            if use_rtype:
-                field = self._format_field(_name, '', _desc)
-            else:
-                field = self._format_field(_name, _type, _desc)
-
-            if multi:
-                if lines:
-                    lines.extend(self._format_block('          * ', field))
-                else:
-                    lines.extend([u':Outputs:', u''])
-                    lines.extend(self._format_block('  * ', field))
-            else:
-                lines.extend([u':Output:', u''])
-                lines.extend(self._format_block('  * ', field))
-                if _type and use_rtype:
-                    lines.append(':rtype: %s' % _type)
-        return lines
+            return self._format_fields('Output', fields)
 
     def _parse_see_also_section(self, section):
         lines = self._consume_to_next_section()
         return self._format_admonition('seealso', lines)
-
+	
+    def _parse_usage_section(self, section):
+        fields = self._consume_to_next_section()
+        field_type = '**Usage**'
+        padding = ' ' * len(field_type)
+        lines = [field_type, ''] + fields
+        print "usage", lines
+        return lines
+	
     def _parse_warning_section(self, section):
         lines = self._consume_to_next_section()
         return self._format_admonition('warning', lines)
