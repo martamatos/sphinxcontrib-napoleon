@@ -477,9 +477,9 @@ class GoogleDocstring(object):
         fields = self._consume_fields()
         multi = len(fields) > 1
         if multi:
-            return self._format_fields('Optional outputs', fields)
+            return self._format_fields('Optional inputs', fields)
         else:
-            return self._format_fields('Optional output', fields)
+            return self._format_fields('Optional intput', fields)
 
     def _parse_optional_returns_section(self, section):
         fields = self._consume_returns_section()
