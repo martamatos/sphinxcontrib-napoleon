@@ -482,7 +482,7 @@ class GoogleDocstring(object):
             return self._format_fields('Optional intput', fields)
 
     def _parse_optional_returns_section(self, section):
-        fields = self._consume_returns_section()
+        fields = self._consume_fields()
         multi = len(fields) > 1
         if multi:
             return self._format_fields('Optional outputs', fields)
@@ -533,7 +533,8 @@ class GoogleDocstring(object):
         return self._parse_generic_section('References', use_admonition)
 
     def _parse_returns_section(self, section):
-        fields = self._consume_returns_section()
+        print "pllo"
+        fields = self._consume_fields()
         multi = len(fields) > 1
         if multi:
             return self._format_fields('Outputs', fields)
