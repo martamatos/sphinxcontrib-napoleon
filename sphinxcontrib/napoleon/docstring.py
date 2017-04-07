@@ -91,6 +91,7 @@ class GoogleDocstring(object):
         self._opt = options
         if isinstance(docstring, str):
             docstring = docstring.splitlines()
+        print "docstring: ", docstring
         self._lines = docstring
         self._line_iter = modify_iter(docstring, modifier=lambda s: s.rstrip())
         self._parsed_lines = []
@@ -429,16 +430,10 @@ class GoogleDocstring(object):
 
     def _parse_examples_section(self, section):
         print "example: ", section
-        fields = self._consume_fields()
-        print fields
+        lines = self._strip_empty(self._consume_to_next_section())
+        lines = self._dedent(lines)
         field_type = '**Example**'
-        padding = ' ' * len(field_type)
-        lines = [field_type, '::']
-        print field_type, fields
-        for _name, _type, _desc in fields:
-            lines.append('  ' + _name)
-        print lines
-        return lines
+        return [field_type, '::', ''] + self._indent(lines, 3)
 
     def _parse_generic_section(self, section, use_admonition):
         lines = self._strip_empty(self._consume_to_next_section())
