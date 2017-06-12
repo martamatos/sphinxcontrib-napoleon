@@ -91,7 +91,7 @@ class GoogleDocstring(object):
         self._opt = options
         if isinstance(docstring, str):
             docstring = docstring.splitlines()
-        print "docstring: ", docstring
+        # print "docstring: ", docstring
         self._lines = docstring
         self._line_iter = modify_iter(docstring, modifier=lambda s: s.rstrip())
         self._parsed_lines = []
@@ -246,7 +246,7 @@ class GoogleDocstring(object):
         lines = []
         while not self._is_section_break():
             lines.append(next(self._line_iter))
-        print lines + self._consume_empty()
+        # print lines + self._consume_empty()
         return lines + self._consume_empty()
 
     def _dedent(self, lines, full=False):
@@ -258,8 +258,8 @@ class GoogleDocstring(object):
 
     def _format_admonition(self, admonition, lines):
         lines = self._strip_empty(lines)
-        print "admonition"
-        print lines
+        # print "admonition"
+        # print lines
         if len(lines) == 1:
             return ['.. %s:: %s' % (admonition, lines[0].strip()), '']
         elif lines:
@@ -303,8 +303,8 @@ class GoogleDocstring(object):
         padding = ' ' * len(field_type)
         multi = len(fields) > 1
         lines = [field_type, '']
-        print "format_fields"
-        print field_type, fields
+        # print "format_fields"
+        # print field_type, fields
         for _name, _type, _desc in fields:
             field = self._format_field(_name, _type, _desc)
             # if multi:
@@ -315,7 +315,7 @@ class GoogleDocstring(object):
             # else:
             #     lines.extend(self._format_block(field_type + ' ', field))
 
-        print lines
+        # print lines
         return lines
 
     def _get_current_indent(self, peek_ahead=0):
@@ -359,10 +359,10 @@ class GoogleDocstring(object):
         section = self._line_iter.peek().lower()
         # print section
         if section.strip(':') in self._sections:
-            print "is section header: ", section
+            # print "is section header: ", section
             header_indent = self._get_indent(section)
             section_indent = self._get_current_indent(peek_ahead=1)
-            print  section_indent > header_indent
+            # print  section_indent > header_indent
             return section_indent > header_indent
         elif self._directive_sections:
             if _directive_regex.match(section):
@@ -385,26 +385,26 @@ class GoogleDocstring(object):
             if self._is_section_header():
                 try:
                     section = self._consume_section_header()
-                    print "section: ", section
+                    # print "section: ", section
                     self._is_in_section = True
                     self._section_indent = self._get_current_indent()
                     if _directive_regex.match(section):
                         lines = [section] + self._consume_to_next_section()
                     else:
-                        print "parse: ", section
+                        # print "parse: ", section
                         lines = self._sections[section.lower()](section)
                 finally:
                     self._is_in_section = False
                     self._section_indent = 0
             else:
                 if not self._parsed_lines:
-                    print "parsed lines: false"
+                    # print "parsed lines: false"
                     lines = self._consume_contiguous() + self._consume_empty()
                 else:
-                    print "parsed lines: true" 
+                    # print "parsed lines: true" 
                     lines = self._consume_to_next_section()
             self._parsed_lines.extend(lines)
-        print self._parsed_lines
+        # print self._parsed_lines
 
     def _parse_attributes_section(self, section):
         lines = []
@@ -429,7 +429,7 @@ class GoogleDocstring(object):
         return []
 
     def _parse_examples_section(self, section):
-        print "example: ", section
+        # print "example: ", section
         lines = self._strip_empty(self._consume_to_next_section())
         lines = self._dedent(lines)
         field_type = '**Example**'
@@ -528,7 +528,7 @@ class GoogleDocstring(object):
         return self._parse_generic_section('References', use_admonition)
 
     def _parse_returns_section(self, section):
-        print "pllo"
+        # print "pllo"
         fields = self._consume_fields()
         multi = len(fields) > 1
         if multi:
@@ -545,7 +545,7 @@ class GoogleDocstring(object):
         field_type = '**Usage**'
         padding = ' ' * len(field_type)
         lines = [field_type, ''] + fields
-        print "usage", lines
+        # print "usage", lines
         return lines
 	
     def _parse_warning_section(self, section):
