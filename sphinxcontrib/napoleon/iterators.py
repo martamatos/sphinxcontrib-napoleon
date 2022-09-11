@@ -208,7 +208,7 @@ class modify_iter(peek_iter):
             args = args[:2]
         else:
             self.modifier = lambda x: x
-        if not isinstance(self.modifier, collections.Callable):
+        if not isinstance(self.modifier, collections.abc.Callable):
             raise TypeError('modify_iter(o, modifier): '
                             'modifier must be callable')
         super(modify_iter, self).__init__(*args)
